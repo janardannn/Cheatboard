@@ -3,6 +3,7 @@ import json
 import pyperclip
 import firebase_admin
 from firebase_admin import credentials, db
+from datetime import datetime
 
 # Load service account credentials
 cred = credentials.Certificate("serviceAccountKey.json")
@@ -16,7 +17,7 @@ firebase_admin.initialize_app(cred, {
 })
 
 # Reference to the clipboard path
-ref = db.reference('clipboard/latest')
+ref = db.reference('clipboard')
 
 last_text = ""
 
@@ -39,11 +40,13 @@ while True:
 
         if current_text != last_text:
             last_text = current_text
-            ref.set(current_text)
+            ref.update({
+                "latest": current_text,
+                "lastUpdated": datetime.utcnow().isoformat()
+            })
             print("📤 Synced:", current_text)
 
         time.sleep(0.5)
-
 
     except Exception as e:
         print(f"❌ Unexpected error: {e}")

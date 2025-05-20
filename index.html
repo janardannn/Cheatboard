@@ -81,18 +81,40 @@
 
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const clipRef = db.ref("clipboard/latest");
+        const clipRef = db.ref("clipboard");
 
         clipRef.on("value", (snapshot) => {
-          clipEl.textContent = snapshot.val() || "Nothing yet.";
+          const data = snapshot.val();
+          const text = data?.latest || "";
+          const lastUpdated = data?.lastUpdated;
+
+          let displayText =
+            "Waiting for input... (If not done yet, run py cheartboard.py)";
+
+          if (text) {
+            displayText = text;
+          }
+
+          if (lastUpdated) {
+            const updatedTime = new Date(lastUpdated);
+            const now = new Date();
+            const hoursPassed = (now - updatedTime) / (1000 * 60 * 60);
+
+            if (hoursPassed >= 12) {
+              displayText =
+                "⚠️ No new input in 12+ hours. (run py cheatboard.py if not already running)";
+            }
+          }
+
+          clipEl.textContent = displayText;
         });
 
         copyBtn.addEventListener("click", async () => {
           const text = clipEl.textContent;
           if (
             !text ||
-            text === "Waiting for input..." ||
-            text === "Nothing yet."
+            text.startsWith("Waiting") ||
+            text.startsWith("⚠️ No new input")
           )
             return;
 
