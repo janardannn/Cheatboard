@@ -8,11 +8,7 @@ from firebase_admin import credentials, db
 cred = credentials.Certificate("serviceAccountKey.json")
 
 # Load databaseURL from firebase.json
-with open("firebase.json", "r") as f:
-    config = json.load(f)
-    database_url = config.get("databaseURL")
-    if not database_url:
-        raise ValueError("Missing 'databaseURL' in firebase.json")
+database_url = "https://cheatboard-35cb3-default-rtdb.asia-southeast1.firebasedatabase.app"
 
 # Initialize Firebase Admin SDK
 firebase_admin.initialize_app(cred, {
