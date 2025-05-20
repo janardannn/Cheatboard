@@ -51,38 +51,33 @@
   <body>
     <h1>Cheatboard Live 📋📍</h1>
     <div class="clip-container" id="clip">
-      Waiting for input... 
-      (If not done yet, run py cheartboard.py)
+      Waiting for input... (If not done yet, run py cheartboard.py)
     </div>
     <button id="copyBtn" class="copy-btn" type="button">📋 Copy Text</button>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script defer>
-      async function loadFirebaseConfig() {
-        try {
-          const res = await fetch("firebase.json");
-          if (!res.ok) throw new Error("Failed to load firebase.json");
-          return await res.json();
-        } catch (err) {
-          alert("⚠️ Could not load Firebase config. Check firebase.json");
-          throw err;
-        }
-      }
-
       window.addEventListener("load", async () => {
         const clipEl = document.getElementById("clip");
         const copyBtn = document.getElementById("copyBtn");
 
-        // Load config from firebase.json instead of hardcoding
-        const firebaseConfig = await loadFirebaseConfig();
+        const firebaseConfig = {
+          apiKey: "AIzaSyAQ_F31wMa55L-iPnlEN4AwPCyD3nFb-sc",
+          authDomain: "cheatboard-35cb3.firebaseapp.com",
+          databaseURL:
+            "https://cheatboard-35cb3-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "cheatboard-35cb3",
+          storageBucket: "cheatboard-35cb3.appspot.com",
+          messagingSenderId: "757121586531",
+          appId: "1:757121586531:web:d67ed60bd689d6632caf56",
+          measurementId: "G-ZBSNV3FX61",
+        };
 
-        // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const clipRef = db.ref("clipboard/latest");
 
-        // Listen for clipboard updates in Firebase
         clipRef.on("value", (snapshot) => {
           clipEl.textContent = snapshot.val() || "Nothing yet.";
         });
