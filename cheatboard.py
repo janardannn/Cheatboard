@@ -3,7 +3,7 @@ import json
 import pyperclip
 import firebase_admin
 from firebase_admin import credentials, db
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # Load service account credentials
 cred = credentials.Certificate("serviceAccountKey.json")
@@ -31,6 +31,9 @@ def safe_paste(retries=5, delay=0.1):
             time.sleep(delay)
     return None
 
+# Define IST timezone (+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
+
 while True:
     try:
         current_text = safe_paste()
@@ -40,11 +43,13 @@ while True:
 
         if current_text != last_text:
             last_text = current_text
+            # Get current time in IST with tz info
+            now_ist = datetime.now(IST)
             ref.update({
                 "latest": current_text,
-                "lastUpdated": datetime.utcnow().isoformat()
+                "lastUpdated": now_ist.isoformat()
             })
-            print("📤 Synced:", current_text)
+            print(f"📤 Synced at IST {now_ist.isoformat()}: {current_text}")
 
         time.sleep(0.5)
 

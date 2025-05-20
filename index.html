@@ -7,7 +7,6 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>📍</text></svg>"
     />
-
     <style>
       body {
         font-family: sans-serif;
@@ -18,7 +17,7 @@
       .clip-container {
         border: 2px dashed #888;
         padding: 1rem;
-        margin: 1.5rem auto;
+        margin: 1.5rem auto 0;
         width: 100%;
         max-width: 600px;
         background: white;
@@ -29,6 +28,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
+      }
+      .time-ago {
+        margin-top: 0.75rem;
+        font-size: 0.95rem;
+        color: #666;
+      }
+      .alert {
+        color: rgb(204, 85, 16);
+        font-weight: bold;
+        margin-top: 0.5rem;
       }
       .copy-btn {
         font-size: 1.2rem;
@@ -42,7 +51,7 @@
         -webkit-user-select: none;
         -webkit-tap-highlight-color: transparent;
         transition: background-color 0.2s ease;
-        margin-top: 1rem;
+        margin-top: 1.5rem;
       }
       .copy-btn:active {
         background-color: #555;
@@ -55,9 +64,18 @@
   </head>
   <body>
     <h1>Cheatboard Live 📋📍</h1>
-    <div class="clip-container" id="clip">
-      Waiting for input... (If not done yet, run py cheartboard.py)
+    <div id="alertBox" class="alert" style="display: none">
+      ⚠️ No new input in 12+ hours. (run py cheatboard.py if not already
+      running)
     </div>
+    <div class="clip-container" id="clip">
+      Waiting for input... (If not done yet, run py cheatboard.py)
+    </div>
+    <div id="timeAgo" class="time-ago"></div>
+    <!-- <div id="alertBox" class="alert" style="display: none">
+      ⚠️ No new input in 12+ hours. (run py cheatboard.py if not already
+      running)
+    </div> -->
     <button id="copyBtn" class="copy-btn" type="button">📋 Copy Text</button>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
@@ -65,6 +83,8 @@
     <script defer>
       window.addEventListener("load", async () => {
         const clipEl = document.getElementById("clip");
+        const timeAgoEl = document.getElementById("timeAgo");
+        const alertBox = document.getElementById("alertBox");
         const copyBtn = document.getElementById("copyBtn");
 
         const firebaseConfig = {
@@ -83,31 +103,68 @@
         const db = firebase.database();
         const clipRef = db.ref("clipboard");
 
+        let lastUpdatedTime = null;
+        let currentText = "";
+
+        function getTimeAgo(date) {
+          const seconds = Math.floor((new Date() - date) / 1000);
+          if (seconds < 5) return "just now";
+          if (seconds < 60) return `${seconds} seconds ago`;
+          const minutes = Math.floor(seconds / 60);
+          if (minutes < 60)
+            return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+          const hours = Math.floor(minutes / 60);
+          if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+          const days = Math.floor(hours / 24);
+          return `${days} day${days > 1 ? "s" : ""} ago`;
+        }
+
+        function updateTimeAgo() {
+          if (!lastUpdatedTime) {
+            timeAgoEl.textContent = "";
+            alertBox.style.display = "none";
+            return;
+          }
+
+          const now = new Date();
+          const hoursPassed = (now - lastUpdatedTime) / (1000 * 60 * 60);
+
+          timeAgoEl.textContent = `Last updated ${getTimeAgo(lastUpdatedTime)}`;
+
+          if (hoursPassed >= 12) {
+            alertBox.style.display = "block";
+          } else {
+            alertBox.style.display = "none";
+          }
+        }
+
         clipRef.on("value", (snapshot) => {
           const data = snapshot.val();
           const text = data?.latest || "";
           const lastUpdated = data?.lastUpdated;
 
-          let displayText =
-            "Waiting for input... (If not done yet, run py cheartboard.py)";
-
-          if (text) {
-            displayText = text;
+          if (text && text !== currentText) {
+            clipEl.textContent = text;
+            currentText = text;
+          } else if (!text) {
+            clipEl.textContent =
+              "Waiting for input... (If not done yet, run py cheatboard.py)";
+            currentText = "";
           }
 
           if (lastUpdated) {
-            const updatedTime = new Date(lastUpdated);
-            const now = new Date();
-            const hoursPassed = (now - updatedTime) / (1000 * 60 * 60);
-
-            if (hoursPassed >= 12) {
-              displayText =
-                "⚠️ No new input in 12+ hours. (run py cheatboard.py if not already running)";
-            }
+            lastUpdatedTime = new Date(lastUpdated);
+          } else {
+            lastUpdatedTime = null;
+            timeAgoEl.textContent = "";
+            alertBox.style.display = "none";
           }
 
-          clipEl.textContent = displayText;
+          updateTimeAgo();
         });
+
+        // Update the "time ago" text every second dynamically
+        setInterval(updateTimeAgo, 1000);
 
         copyBtn.addEventListener("click", async () => {
           const text = clipEl.textContent;
