@@ -65,8 +65,7 @@
   <body>
     <h1>Cheatboard Live 📋📍</h1>
     <div id="alertBox" class="alert" style="display: none">
-      ⚠️ No new input in 12+ hours. (run py cheatboard.py if not already
-      running)
+      ⚠️ No new input in 6+ hours. (run py cheatboard.py if not already running)
     </div>
     <div class="clip-container" id="clip">
       Waiting for input... (If not done yet, run py cheatboard.py)
@@ -131,7 +130,7 @@
 
           timeAgoEl.textContent = `Last updated ${getTimeAgo(lastUpdatedTime)}`;
 
-          if (hoursPassed >= 12) {
+          if (hoursPassed >= 6) {
             alertBox.style.display = "block";
           } else {
             alertBox.style.display = "none";
