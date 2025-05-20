@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cheatboard</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        text-align: center;
+        padding: 2rem;
+        background-color: #f5f5f5;
+      }
+      .clip-container {
+        border: 2px dashed #888;
+        padding: 1rem;
+        margin: 1.5rem auto;
+        width: 100%;
+        max-width: 600px;
+        background: white;
+        border-radius: 8px;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        min-height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .copy-btn {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        background-color: #333;
+        color: white;
+        border-radius: 4px;
+        border: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: background-color 0.2s ease;
+        margin-top: 1rem;
+      }
+      .copy-btn:active {
+        background-color: #555;
+      }
+      .copy-btn:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cheatboard Live 📋📍</h1>
+    <div class="clip-container" id="clip">Waiting for input...</div>
+    <button id="copyBtn" class="copy-btn" type="button">📋 Copy Text</button>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script defer>
+      async function loadFirebaseConfig() {
+        try {
+          const res = await fetch("firebase.json");
+          if (!res.ok) throw new Error("Failed to load firebase.json");
+          return await res.json();
+        } catch (err) {
+          alert("⚠️ Could not load Firebase config. Check firebase.json");
+          throw err;
+        }
+      }
+
+      window.addEventListener("load", async () => {
+        const clipEl = document.getElementById("clip");
+        const copyBtn = document.getElementById("copyBtn");
+
+        // Load config from firebase.json instead of hardcoding
+        const firebaseConfig = await loadFirebaseConfig();
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const clipRef = db.ref("clipboard/latest");
+
+        // Listen for clipboard updates in Firebase
+        clipRef.on("value", (snapshot) => {
+          clipEl.textContent = snapshot.val() || "Nothing yet.";
+        });
+
+        copyBtn.addEventListener("click", async () => {
+          const text = clipEl.textContent;
+          if (
+            !text ||
+            text === "Waiting for input..." ||
+            text === "Nothing yet."
+          )
+            return;
+
+          copyBtn.disabled = true;
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBtn.textContent = "✅ Copied!";
+            setTimeout(() => {
+              copyBtn.textContent = "📋 Copy Text";
+              copyBtn.disabled = false;
+            }, 1800);
+          } catch (err) {
+            alert("❌ Failed to copy to clipboard.");
+            copyBtn.disabled = false;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
